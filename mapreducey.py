@@ -6,7 +6,7 @@ app = Flask(__name__)
 @app.route('/work')
 def work():
     data = {"message" : "I do work for these params", "params" : request.args}
-    callback_url = 'http://' + app.config['SERVER_NAME'] + '/callback/work'
+    callback_url = request.url_root + 'callback/work'
     r = requests.get(callback_url, params = request.args)
     data['callback_response'] = r.json()
     response = jsonify(data)
@@ -32,12 +32,9 @@ def callbackHereiam():
 
 
 if __name__ == '__main__':
-    app.config['SERVER_NAME'] = 'localhost:5000'
-    my_env = 'sandbox'
     app.debug = True
+    my_env = 'sandbox'
     app.run()
 else:
-    if app.config['SERVER_NAME'] is None:
-        app.config['SERVER_NAME'] = 'localhost:5000'
     app.debug = True
     my_env = 'production'
