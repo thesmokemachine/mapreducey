@@ -1,22 +1,34 @@
-from flask import Flask
-from flask import request
-
-import json
-
+from flask import Flask, request, Response, jsonify
+import requests
 
 app = Flask(__name__)
 
 @app.route('/work')
 def work():
-    return "I do work for these params: " + json.dumps(request.args)
+    data = {"message" : "I do work for these params", "params" : request.args}
+    callback_url = 'http://' + app.config['SERVER_NAME'] + '/callback/work'
+    r = requests.get(callback_url, params = request.args)
+    data['callback_response'] = r.json()
+    response = jsonify(data)
+    response.status_code = 200
+    return response
 
 @app.route('/callback/work')
 def callbackWork():
-    return "I accept updates on completed work from workers. my_env: " + my_env
+    data = {"message" : "I did your work", "params" : request.args, "answer" : "yes"}
+    response = jsonify(data)
+    response.status_code = 200
+    return response
 
 @app.route('/callback/hereiam')
 def callbackHereiam():
-    return "I accept heartbeats from workers if I am a router."
+    data = {"params" : request.args}
+    response = jsonify(data)
+    response.status_code = 200
+    return response
+
+
+
 
 
 if __name__ == '__main__':
@@ -25,4 +37,7 @@ if __name__ == '__main__':
     app.debug = True
     app.run()
 else:
+    if app.config['SERVER_NAME'] is None:
+        app.config['SERVER_NAME'] = 'localhost:5000'
+    app.debug = True
     my_env = 'production'
