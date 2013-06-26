@@ -19,8 +19,9 @@ def start_app(**kwargs):
 
 @app.route('/work')
 def work():
+    import random
     data = {"purpose" : purpose, "message" : "I do work for these params", "params" : request.args}
-    worker = workers[0]
+    worker = random.choice(workers)
     callback_url = 'http://' + worker + '/callback/work'
     r = requests.get(callback_url, params = request.args)
     data['callback_response'] = r.json()
