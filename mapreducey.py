@@ -7,6 +7,8 @@ import requests
 app = Flask(__name__)
 
 def start_app(**kwargs):
+    global workers
+    workers = ['mapreducey-1.appspot.com', 'guarded-basin-2898.herokuapp.com']
     global purpose
     if 'purpose' in kwargs and kwargs['purpose'] in ['router','worker']:
         purpose = kwargs['purpose']
@@ -18,9 +20,12 @@ def start_app(**kwargs):
 @app.route('/work')
 def work():
     data = {"purpose" : purpose, "message" : "I do work for these params", "params" : request.args}
-    callback_url = request.url_root + 'callback/work'
+    worker = workers[0]
+    callback_url = 'http://' + worker + '/callback/work'
     r = requests.get(callback_url, params = request.args)
     data['callback_response'] = r.json()
+    data['worker_url'] = worker
+    data['router_url'] = request.url_root[7:-1]
     response = jsonify(data)
     response.status_code = 200
     return response
