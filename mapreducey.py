@@ -8,7 +8,7 @@ app = Flask(__name__)
 
 def start_app(**kwargs):
     global workers
-    workers = ['mapreducey-1.appspot.com', 'guarded-basin-2898.herokuapp.com']
+    workers = ['mapreducey-1.appspot.com', 'mapreducey-1.herokuapp.com']
     global purpose
     if 'purpose' in kwargs and kwargs['purpose'] in ['router','worker']:
         purpose = kwargs['purpose']
