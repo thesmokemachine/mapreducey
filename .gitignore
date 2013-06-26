@@ -1,3 +1,9 @@
 venv
 *.pyc
 build
+flask
+itsdangerous.py
+jinja2
+markupsafe
+requests
+werkzeug
