@@ -11,7 +11,7 @@ def start_app(**kwargs):
 
     work = ['image_resize', 'mushroom_ify']
     work_type = {'image_resize' : 'json', 'mushroom_ify' : 'image/png'}
-    workers = ['mapreducey-1.herokuapp.com', 'mapreducey-1.herokuapp.com']
+    workers = ['mapreducey-1.herokuapp.com', 'mapreducey-2.herokuapp.com']
     #workers = ['localhost:5000', 'localhost:5000']
 
     global purpose
