@@ -1,4 +1,4 @@
-from flask import Flask, request, Response, jsonify, make_response, send_file
+from flask import Flask, request, Response, jsonify, make_response, send_file, json
 import requests
 
 
@@ -11,8 +11,8 @@ def start_app(**kwargs):
 
     work = ['image_resize', 'mushroom_ify']
     work_type = {'image_resize' : 'json', 'mushroom_ify' : 'image/png'}
-    workers = ['mapreducey-1.herokuapp.com', 'mapreducey-2.herokuapp.com']
-    #workers = ['localhost:5000', 'localhost:5000']
+    #workers = ['mapreducey-1.herokuapp.com', 'mapreducey-2.herokuapp.com']
+    workers = ['localhost:5000', 'localhost:5000']
 
     global purpose
     if 'purpose' in kwargs and kwargs['purpose'] in ['router','worker']:
@@ -33,8 +33,14 @@ def work():
         response.status_code = 501
         return response
     elif purpose == 'worker' or 'routed' in params.keys():
-        data['response'] = globals()[params['work']](**params)
-        if work_type[params['work']] != 'json':
+        if 'callback_url' in params:
+            import threading
+            threading.Thread(target=globals()[params['work']], kwargs=params).start()
+            data['response'] = "You should receive an answer at %s" % params['callback_url']
+        else:
+            data['response'] = globals()[params['work']](**params)
+
+        if work_type[params['work']] != 'json' and 'callback_url' not in params:
             return send_file(data['response'], mimetype = work_type[params['work']])
         response = jsonify(data)
         response.status_code = 200
@@ -44,7 +50,7 @@ def work():
         callback_url = 'http://' + worker + '/work'
         params['routed'] = True
         r = requests.get(callback_url, params = params)
-        if work_type[params['work']] != 'json':
+        if work_type[params['work']] != 'json' and 'callback_url' not in params:
             import cStringIO
             return send_file(cStringIO.StringIO(r.content), mimetype = work_type[params['work']])
         data['response'] = r.json()
@@ -54,12 +60,17 @@ def work():
         response.status_code = 200
         return response
 
-@app.route('/callback/work')
+@app.route('/callback/work', methods=['GET','POST'])
 def callbackWork():
-    data = {"purpose" : purpose, "message" : "I did your work", "params" : request.args, "answer" : "yes"}
-    response = jsonify(data)
-    response.status_code = 200
-    return response
+    if request.method == 'POST':
+        params = request.data
+        return make_response(params)
+    else:
+        params = request.args.to_dict()
+        data = {"purpose" : purpose, "message" : "I did your work", "params" : params, "answer" : "yes"}
+        response = jsonify(data)
+        response.status_code = 200
+        return response
 
 @app.route('/callback/hereiam')
 def callbackHereiam():
@@ -75,7 +86,12 @@ def image_resize(**kwargs):
     if len(vars) != len(intersection):
         return "Please pass these vars: %s. I received: %s" % (sorted(vars), sorted(list(intersection)))
 
-    return "<img src='%s' width='%s' height='%s'>" % (kwargs['img_url'], kwargs['width'], kwargs['height'])
+    result = "<img src='%s' width='%s' height='%s'>" % (kwargs['img_url'], kwargs['width'], kwargs['height'])
+    if 'callback_url' not in kwargs:
+        return result
+    headers = {'content-type': 'application/json'}
+    data = {'result' : result}
+    requests.post(kwargs['callback_url'], data = result)
 
 def mushroom_ify(**kwargs):
     from PIL import Image
@@ -105,7 +121,10 @@ def mushroom_ify(**kwargs):
     result.save(output, format="PNG")
     output.seek(0)
     result = None
-    return output
+
+    if 'callback_url' not in kwargs:
+        return output
+    print "post return value to callback_url"
 
     #result = output.getvalue().encode("base64")
     #output.close()
@@ -118,6 +137,7 @@ def mushroom_ify(**kwargs):
 if __name__ == '__main__':
     app.debug = True
     my_env = 'sandbox'
+    start_app()
     app.run()
 else:
     app.debug = True
