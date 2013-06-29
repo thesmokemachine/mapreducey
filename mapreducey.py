@@ -63,8 +63,10 @@ def work():
 @app.route('/callback/work', methods=['GET','POST'])
 def callbackWork():
     if request.method == 'POST':
-        params = request.data
-        return make_response(params)
+        with open("callback_log.txt", "a") as myfile:
+            print request.data
+            myfile.write(json.dumps(request.data) + "\n")
+        return jsonify(items=request.data)
     else:
         params = request.args.to_dict()
         data = {"purpose" : purpose, "message" : "I did your work", "params" : params, "answer" : "yes"}
@@ -89,9 +91,7 @@ def image_resize(**kwargs):
     result = "<img src='%s' width='%s' height='%s'>" % (kwargs['img_url'], kwargs['width'], kwargs['height'])
     if 'callback_url' not in kwargs:
         return result
-    headers = {'content-type': 'application/json'}
-    data = {'result' : result}
-    requests.post(kwargs['callback_url'], data = result)
+    requests.post(kwargs['callback_url'], result)
 
 def mushroom_ify(**kwargs):
     from PIL import Image
